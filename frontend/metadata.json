@@ -1,0 +1,5 @@
+{
+  "name": "Copy of NexusAI Gateway",
+  "description": "A comprehensive LLM Gateway dashboard for managing API traffic, designing prompts, and hosting developer documentation.",
+  "requestFramePermissions": []
+}
