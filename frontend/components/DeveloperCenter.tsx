@@ -32,8 +32,15 @@ import {
     Download,
     Book,
     MoreVertical,
+    Sparkles,
     X,
-    ArrowRight
+    ArrowRight,
+    ChevronLeft,
+    Send,
+    History,
+    Settings2,
+    RefreshCw,
+    Search as SearchIcon
 } from 'lucide-react';
 
 import Dashboard from './Dashboard';
@@ -56,6 +63,8 @@ interface KnowledgeBaseItem {
     docCount: number;
     size: string;
     updatedAt: string;
+    status: 'Ready' | 'Indexing' | 'Failed';
+    type: 'General' | 'Construction' | 'Legal' | 'Enterprise';
 }
 
 interface AgentWorkflow {
@@ -68,6 +77,411 @@ interface AgentWorkflow {
 }
 
 // --- Components ---
+
+const CreateKBModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean, onClose: () => void, onAdd: (kb: KnowledgeBaseItem) => void }) => {
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        type: 'General' as KnowledgeBaseItem['type'],
+        chunkSize: 500,
+        overlap: 50
+    });
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newKb: KnowledgeBaseItem = {
+            id: `kb-${Date.now()}`,
+            name: formData.name,
+            description: formData.description,
+            docCount: 0,
+            size: '0 KB',
+            updatedAt: new Date().toISOString().split('T')[0],
+            status: 'Ready',
+            type: formData.type
+        };
+        onAdd(newKb);
+        onClose();
+        setStep(1);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
+            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">创建新知识库</h2>
+                        <p className="text-slate-400 text-sm mt-1">步骤 {step} / 3: {step === 1 ? '基础配置' : step === 2 ? '内容上传' : '索引设置'}</p>
+                    </div>
+                    <button onClick={onClose} className="p-3 text-slate-300 hover:text-slate-500 hover:bg-slate-100 rounded-2xl transition-all">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8">
+                    {step === 1 && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">知识库名称</label>
+                                <input
+                                    required
+                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                    placeholder="例如: 2026年建筑防火设计规范"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">所属分类</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: 'General', label: '通用/百科', icon: <Globe size={14} /> },
+                                        { id: 'Construction', label: '建筑与基建', icon: <DatabaseIcon size={14} /> },
+                                        { id: 'Legal', label: '法律法规', icon: <Book size={14} /> },
+                                        { id: 'Enterprise', label: '企业内部文档', icon: <FileText size={14} /> }
+                                    ].map(t => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, type: t.id as any })}
+                                            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all font-bold text-sm
+                                                ${formData.type === t.id ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}
+                                        >
+                                            {t.icon} {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">详细描述</label>
+                                <textarea
+                                    rows={3}
+                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none"
+                                    placeholder="简述该知识库的内容范围和目标用途..."
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="border-4 border-dashed border-slate-100 rounded-[2rem] p-12 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-50 hover:border-blue-200 transition-all cursor-pointer group">
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-all">
+                                    <UploadCloud size={32} />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-1">点击或拖拽文件到此处</h3>
+                                <p className="text-slate-400 text-sm max-w-xs mx-auto">支持 PDF, DOCX, TXT, MD 格式。单个文件不超过 50MB。</p>
+                            </div>
+                            <div className="bg-slate-50 p-6 rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400">
+                                        <FileText size={20} />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-slate-700">尚未上传文件</div>
+                                        <div className="text-xs text-slate-400">目前知识库将为空</div>
+                                    </div>
+                                </div>
+                                <button type="button" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">浏览文件</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">切片大小 (Chunk Size)</label>
+                                <div className="flex items-center gap-4">
+                                    <input type="range" min="100" max="2000" step="100" className="flex-1" value={formData.chunkSize} onChange={e => setFormData({ ...formData, chunkSize: parseInt(e.target.value) })} />
+                                    <span className="w-20 text-center font-mono text-sm font-bold bg-slate-100 py-1 rounded-lg">{formData.chunkSize} tokens</span>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">重叠比例 (Overlap Percentage)</label>
+                                <div className="flex items-center gap-4">
+                                    <input type="range" min="0" max="25" step="5" className="flex-1" value={formData.overlap} onChange={e => setFormData({ ...formData, overlap: parseInt(e.target.value) })} />
+                                    <span className="w-20 text-center font-mono text-sm font-bold bg-slate-100 py-1 rounded-lg">{formData.overlap}%</span>
+                                </div>
+                            </div>
+                            <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3">
+                                <h4 className="text-xs font-bold text-blue-800 flex items-center gap-2"><Sparkles size={14} /> 索引预览</h4>
+                                <p className="text-[11px] text-blue-600 leading-relaxed italic">
+                                    我们将使用 <b>Building-Embed-Text-v2</b> 模型对您的文档进行矢量化。开启语义分块后，系统将自动识别文档的逻辑结构以提高检索准确率。
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </form>
+
+                <div className="px-10 py-8 border-t border-slate-100 flex justify-between bg-slate-50/30">
+                    <button
+                        type="button"
+                        onClick={() => step === 1 ? onClose() : setStep(step - 1)}
+                        className="px-8 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-white hover:shadow-sm transition-all"
+                    >
+                        {step === 1 ? '取消' : '上一步'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => step === 3 ? null : setStep(step + 1)}
+                        className="px-10 py-3 rounded-2xl bg-slate-900 text-white text-sm font-bold shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-95 transition-all flex items-center gap-2"
+                        onClickCapture={(e) => {
+                            if (step === 3) {
+                                // Handled by form onSubmit but we can trigger it
+                            }
+                        }}
+                    >
+                        {step === 3 ? (
+                            <button type="submit" form="kb-form" className="flex items-center gap-2" onClick={(e) => handleSubmit(e as any)}>
+                                开始构建 <ArrowRight size={16} />
+                            </button>
+                        ) : (
+                            <>继续下一步 <ArrowRight size={16} /></>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const KBManagementView = ({ kb, onBack }: { kb: KnowledgeBaseItem, onBack: () => void }) => {
+    const [subTab, setSubTab] = useState<'docs' | 'test' | 'settings'>('docs');
+    const [testQuery, setTestQuery] = useState('');
+    const [isTesting, setIsTesting] = useState(false);
+
+    // Mock documents
+    const documents = [
+        { name: 'GB-50016-2024建筑设计防火规范.pdf', size: '12.4 MB', status: 'Ready', date: '2025-10-20' },
+        { name: '施工现场消防安全技术规范.docx', size: '4.2 MB', status: 'Ready', date: '2025-10-22' },
+        { name: '高层建筑混凝土结构技术规程.pdf', size: '28.1 MB', status: 'Ready', date: '2025-10-24' },
+    ];
+
+    return (
+        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={onBack}
+                        className="p-4 bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 rounded-2xl shadow-sm transition-all group"
+                    >
+                        <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+                    </button>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{kb.name}</h1>
+                            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-emerald-100">
+                                {kb.status}
+                            </span>
+                        </div>
+                        <p className="text-slate-400 text-sm font-medium">{kb.description}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button className="px-6 py-3 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2">
+                        <RefreshCw size={16} /> 全部重新索引
+                    </button>
+                    <button className="px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl shadow-lg shadow-slate-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                        <Plus size={18} /> 添加文档
+                    </button>
+                </div>
+            </div>
+
+            {/* Sub-navigation */}
+            <div className="flex gap-1 p-1.5 bg-slate-100/80 backdrop-blur rounded-2xl w-fit mb-8">
+                {[
+                    { id: 'docs', label: '文档管理', icon: <FileText size={16} /> },
+                    { id: 'test', label: '检索测试', icon: <DatabaseIcon size={16} /> },
+                    { id: 'settings', label: '基础设置', icon: <Settings2 size={16} /> }
+                ].map(t => (
+                    <button
+                        key={t.id}
+                        onClick={() => setSubTab(t.id as any)}
+                        className={`flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-sm font-bold transition-all
+                            ${subTab === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
+                    >
+                        {t.icon} {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Content Area */}
+            <div className="grid grid-cols-1 gap-6">
+                {subTab === 'docs' && (
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                            <div className="relative w-full max-w-md">
+                                <SearchIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    placeholder="搜索文档库..."
+                                    className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-4 focus:ring-blue-500/5 outline-none transition-all placeholder:text-slate-300"
+                                />
+                            </div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                共 {documents.length} 个文档 | {kb.size}
+                            </div>
+                        </div>
+                        <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <th className="px-6 py-4">文档名称</th>
+                                        <th className="px-6 py-4">大小</th>
+                                        <th className="px-6 py-4">状态</th>
+                                        <th className="px-6 py-4">上传时间</th>
+                                        <th className="px-6 py-4 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {documents.map((doc, i) => (
+                                        <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
+                                                        <FileText size={20} />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700 tracking-tight">{doc.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 text-sm font-medium text-slate-500">{doc.size}</td>
+                                            <td className="px-6 py-5">
+                                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-md">{doc.status}</span>
+                                            </td>
+                                            <td className="px-6 py-5 text-sm font-medium text-slate-400">{doc.date}</td>
+                                            <td className="px-6 py-5 text-right">
+                                                <button className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {subTab === 'test' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[600px]">
+                        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 flex flex-col">
+                            <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-2">
+                                <Zap size={20} className="text-amber-500" /> 检索模拟器
+                            </h3>
+                            <div className="flex-1 space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">测试查询语句</label>
+                                    <textarea
+                                        rows={4}
+                                        value={testQuery}
+                                        onChange={e => setTestQuery(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm focus:ring-4 focus:ring-blue-500/5 outline-none transition-all placeholder:text-slate-300 resize-none"
+                                        placeholder="输入一个专业问题来测试检索效果..."
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-500">检索 Top K</span>
+                                        <span className="text-xs font-mono font-bold text-blue-600">3</span>
+                                    </div>
+                                    <input type="range" className="w-full" min="1" max="10" defaultValue="3" />
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsTesting(true);
+                                    setTimeout(() => setIsTesting(false), 800);
+                                }}
+                                disabled={!testQuery || isTesting}
+                                className="w-full py-4 bg-blue-600 text-white text-sm font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                            >
+                                {isTesting ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
+                                {isTesting ? '正在检索...' : '执行检索测试'}
+                            </button>
+                        </div>
+
+                        <div className="bg-slate-900 rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full"></div>
+                            <h3 className="text-lg font-black text-white/90 mb-6 flex items-center gap-2 z-10">
+                                <History size={20} className="text-blue-400" /> 检索结果 (Context)
+                            </h3>
+                            <div className="flex-1 overflow-y-auto space-y-4 z-10 pr-2 custom-scrollbar">
+                                {testQuery ? (
+                                    <>
+                                        <div className="p-6 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Chunk #1 - Rerank Score: 0.982</span>
+                                                <span className="text-[10px] text-white/30 font-mono">GB-50016-2024</span>
+                                            </div>
+                                            <p className="text-sm text-slate-300 leading-relaxed italic border-l-2 border-blue-500/50 pl-4">
+                                                “第五点二条：民用建筑的耐火等级、层数、长度和面积应符合下列规定... 底部设置商业服务网点的住宅建筑... 其防火分区最大允许建筑面积不应大于2500平方米。”
+                                            </p>
+                                        </div>
+                                        <div className="p-6 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Chunk #2 - Rerank Score: 0.854</span>
+                                                <span className="text-[10px] text-white/30 font-mono">GB-50016-2024</span>
+                                            </div>
+                                            <p className="text-sm text-slate-300 leading-relaxed italic border-l-2 border-blue-500/20 pl-4">
+                                                “第六点四条：疏散楼梯间的宽度应根据疏散人数计算确定，其最小净宽度不应小于1.1m...”
+                                            </p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                                        <DatabaseIcon size={48} className="text-white mb-4" />
+                                        <p className="text-sm text-white/60">等待查询指令中...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {subTab === 'settings' && (
+                    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-10 max-w-3xl">
+                        <h3 className="text-xl font-black text-slate-900 mb-10">知识库基础设置</h3>
+                        <div className="space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">知识库公开 ID</label>
+                                    <div className="flex items-center gap-2">
+                                        <code className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-600">{kb.id}</code>
+                                        <button className="p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-400 transition-all"><Copy size={16} /></button>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">向量化模型</label>
+                                    <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl text-xs font-bold text-blue-800 flex items-center gap-2">
+                                        <Sparkles size={14} /> Building-Embed-Text-v2
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">关联模型权限</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Gemini 3 Pro', 'Structural Native', 'Zhi-An Large Model'].map(m => (
+                                        <span key={m} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-100">{m}</span>
+                                    ))}
+                                    <button className="px-3 py-1.5 bg-white text-blue-600 text-[11px] font-bold rounded-lg border border-blue-200 border-dashed hover:bg-blue-50 transition-all">+ 分配</button>
+                                </div>
+                            </div>
+                            <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                                <button className="px-8 py-3.5 bg-slate-50 text-slate-500 text-sm font-bold rounded-xl hover:bg-slate-100 transition-all">取消更改</button>
+                                <button className="px-8 py-3.5 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">保存设置</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const DeveloperCenter: React.FC<{ initialTab?: Tab }> = ({ initialTab = 'dashboard' }) => {
     const [activeTab, setActiveTab] = useState<Tab>(initialTab);
@@ -82,9 +496,11 @@ const DeveloperCenter: React.FC<{ initialTab?: Tab }> = ({ initialTab = 'dashboa
 
     // -- Knowledge Base State (Simplified from KnowledgeBase.tsx) --
     const [kbItems, setKbItems] = useState<KnowledgeBaseItem[]>([
-        { id: 'kb1', name: '建筑设计通用规范', description: '包含国家标准、行业标准及通用技术规范', docCount: 12, size: '45.2 MB', updatedAt: '2025-10-24' },
-        { id: 'kb2', name: '项目A 施工文档', description: '项目专属施工方案、图纸及变更记录', docCount: 8, size: '128.5 MB', updatedAt: '2025-11-02' },
+        { id: 'kb1', name: '建筑设计通用规范', description: '包含国家标准、行业标准及通用技术规范', docCount: 12, size: '45.2 MB', updatedAt: '2025-10-24', status: 'Ready', type: 'Construction' },
+        { id: 'kb2', name: '项目A 施工文档', description: '项目专属施工方案、图纸及变更记录', docCount: 8, size: '128.5 MB', updatedAt: '2025-11-02', status: 'Ready', type: 'Enterprise' },
     ]);
+    const [isKBModalOpen, setIsKBModalOpen] = useState(false);
+    const [selectedKB, setSelectedKB] = useState<KnowledgeBaseItem | null>(null);
 
     // -- Agents State --
     const [agents, setAgents] = useState<AgentWorkflow[]>([
@@ -130,10 +546,10 @@ const DeveloperCenter: React.FC<{ initialTab?: Tab }> = ({ initialTab = 'dashboa
                 </button>
 
                 <button
-                    onClick={() => setActiveTab('knowledge')}
+                    onClick={() => { setActiveTab('knowledge'); setSelectedKB(null); }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'knowledge' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
                 >
-                    <DatabaseIcon size={18} /> 知识库 (RAG)
+                    <DatabaseIcon size={18} /> 知识库
                 </button>
 
                 <button
@@ -252,45 +668,114 @@ const DeveloperCenter: React.FC<{ initialTab?: Tab }> = ({ initialTab = 'dashboa
 
                 {/* KNOWLEDGE BASE TAB */}
                 {activeTab === 'knowledge' && (
-                    <div className="max-w-6xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div className="flex justify-between items-end mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-900 mb-2">知识库 (RAG)</h1>
-                                <p className="text-slate-500 text-sm">上传建筑规范、工程方案或企业文档，赋予大模型专业知识背景。</p>
-                            </div>
-                            <button className="px-4 py-2 bg-slate-900 text-sm font-bold text-white rounded-xl shadow-lg flex items-center gap-2">
-                                <UploadCloud size={18} /> 上传新文档
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {kbItems.map(item => (
-                                <div key={item.id} className="bg-white p-6 rounded-3xl border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 text-slate-50 transition-colors group-hover:text-blue-50 uppercase font-black text-4xl">
-                                        KB
+                    selectedKB ? (
+                        <KBManagementView kb={selectedKB} onBack={() => setSelectedKB(null)} />
+                    ) : (
+                        <div className="max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+                                <div className="max-w-2xl">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 text-[10px] font-black uppercase tracking-widest mb-4">
+                                        <Layers size={12} /> Knowledge Management
                                     </div>
-
-                                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                                        <DatabaseIcon size={24} />
-                                    </div>
-
-                                    <h3 className="text-lg font-bold text-slate-900 mb-2">{item.name}</h3>
-                                    <p className="text-sm text-slate-500 mb-6 line-clamp-2 leading-relaxed">{item.description}</p>
-
-                                    <div className="pt-6 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                        <span className="flex items-center gap-1"><FileText size={12} /> {item.docCount} Docs</span>
-                                        <span className="flex items-center gap-1"><Layers size={12} /> {item.size}</span>
-                                    </div>
+                                    <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">知识库</h1>
+                                    <p className="text-slate-500 text-base leading-relaxed">
+                                        在 <span className="text-slate-900 font-bold">Building MaaS</span> 平台上，您可以轻松构建针对建筑行业的私有 RAG。
+                                        上传行业规范、项目图纸或技术文档，我们的向量集成服务将赋予 AI 实时、精准、可靠的专业理解能力。
+                                    </p>
                                 </div>
-                            ))}
-                            <div className="border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center p-8 text-slate-400 hover:border-blue-300 hover:bg-blue-50 group transition-all cursor-pointer">
-                                <div className="w-12 h-12 rounded-full border-2 border-slate-200 flex items-center justify-center mb-4 group-hover:border-blue-400 group-hover:text-blue-500 transition-all">
-                                    <Plus size={24} />
+                                <div className="flex items-center gap-3">
+                                    <button className="px-6 py-3.5 bg-white border-2 border-slate-100 text-slate-600 text-sm font-bold rounded-2xl shadow-sm hover:border-blue-200 hover:text-blue-600 transition-all">
+                                        批量同步
+                                    </button>
+                                    <button
+                                        onClick={() => setIsKBModalOpen(true)}
+                                        className="px-8 py-3.5 bg-slate-900 text-white text-sm font-bold rounded-2xl shadow-2xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                    >
+                                        <Plus size={20} /> 新建知识库
+                                    </button>
                                 </div>
-                                <span className="text-sm font-bold">新建知识库</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {kbItems.map(item => (
+                                    <div key={item.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 hover:shadow-[0_20px_60px_-15px_rgba(15,23,42,0.1)] hover:-translate-y-2 transition-all duration-500 group relative flex flex-col min-h-[380px]">
+                                        {/* KB Background Watermark */}
+                                        <div className="absolute -top-4 -right-2 text-[120px] font-black text-slate-50 uppercase pointer-events-none select-none group-hover:text-blue-50/50 transition-colors">
+                                            KB
+                                        </div>
+
+                                        <div className="relative">
+                                            <div className="flex justify-between items-start mb-8">
+                                                <div className="w-16 h-16 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 rounded-3xl flex items-center justify-center shadow-inner group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white transition-all duration-500">
+                                                    <DatabaseIcon size={32} />
+                                                </div>
+                                                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm border
+                                                    ${item.status === 'Ready' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                        item.status === 'Indexing' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                                    {item.status === 'Indexing' && <RotateCw size={10} className="inline mr-1 animate-spin" />}
+                                                    {item.status}
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-2">
+                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-md">
+                                                    {item.type === 'Construction' ? '建筑/基建' : item.type === 'Legal' ? '法律法规' : item.type === 'Enterprise' ? '企业文档' : '通用'}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">{item.name}</h3>
+                                            <p className="text-sm text-slate-400 mb-10 line-clamp-3 leading-relaxed flex-1">{item.description}</p>
+                                        </div>
+
+                                        <div className="mt-auto space-y-6 relative">
+                                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-tighter bg-slate-50/50 p-4 rounded-2xl">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-slate-300 text-[9px] font-black tracking-widest">文件数量</span>
+                                                    <span className="flex items-center gap-1.5 text-slate-800"><FileText size={14} className="text-slate-400" /> {item.docCount} Docs</span>
+                                                </div>
+                                                <div className="w-px h-8 bg-slate-200 mx-2"></div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-slate-300 text-[9px] font-black tracking-widest">总容量</span>
+                                                    <span className="flex items-center gap-1.5 text-slate-800"><Layers size={14} className="text-slate-400" /> {item.size}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => setSelectedKB(item)}
+                                                    className="flex-1 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/20 transition-all opacity-0 group-hover:opacity-100 -translate-y-2 group-hover:translate-y-0 duration-300"
+                                                >
+                                                    进入管理
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (window.confirm('确定要彻底删除该知识库及所有关联向量吗？')) {
+                                                            setKbItems(kbItems.filter(i => i.id !== item.id));
+                                                        }
+                                                    }}
+                                                    className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Empty/Add Placeholder */}
+                                <div
+                                    onClick={() => setIsKBModalOpen(true)}
+                                    className="border-4 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-slate-300 hover:border-blue-300 hover:bg-blue-50/50 group transition-all cursor-pointer min-h-[380px]"
+                                >
+                                    <div className="w-24 h-24 rounded-full border-4 border-slate-100 bg-white flex items-center justify-center mb-8 group-hover:border-blue-400 group-hover:text-blue-500 transition-all shadow-sm">
+                                        <Plus size={44} />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-slate-400 group-hover:text-blue-600 transition-colors tracking-tight">新建知识库</h3>
+                                    <p className="text-slate-300 text-sm mt-3 max-w-[200px] mx-auto text-center font-medium leading-relaxed group-hover:text-slate-400">开始构建您的行业垂直知识中枢</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )
                 )}
 
                 {/* AGENTS TAB */}
@@ -503,8 +988,14 @@ const DeveloperCenter: React.FC<{ initialTab?: Tab }> = ({ initialTab = 'dashboa
                         </div>
                     </div>
                 )}
-
             </div>
+
+            {/* CREATE KB MODAL */}
+            <CreateKBModal
+                isOpen={isKBModalOpen}
+                onClose={() => setIsKBModalOpen(false)}
+                onAdd={(newKb) => setKbItems([newKb, ...kbItems])}
+            />
 
             {/* API KEY MODAL */}
             {isKeyModalOpen && (

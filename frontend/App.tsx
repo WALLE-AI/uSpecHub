@@ -194,7 +194,7 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden">
-        {currentView === 'models' && <ModelCenter onNavigateToDevCenter={() => { setDevCenterTab('docs'); setCurrentView('dev-center'); }} />}
+        {currentView === 'models' && <ModelCenter isAdmin={user?.role === 'Admin'} onNavigateToDevCenter={() => { setDevCenterTab('docs'); setCurrentView('dev-center'); }} />}
         {currentView === 'dev-center' && <DeveloperCenter initialTab={devCenterTab} />}
         {currentView === 'profile' && <UserProfilePage user={user!} />}
         {currentView === 'billing' && <BillingPage />}

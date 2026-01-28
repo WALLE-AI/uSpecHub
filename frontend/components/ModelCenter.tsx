@@ -27,7 +27,10 @@ import {
   Activity,
   Sparkles,
   MoreHorizontal,
-  Info
+  Info,
+  Plus,
+  Trash2,
+  X
 } from 'lucide-react';
 
 // --- Types ---
@@ -57,40 +60,22 @@ interface ModelSpec {
 // --- Mock Data ---
 const MODELS: ModelSpec[] = [
   {
-    id: 'med-insight-v4',
-    name: 'MedInsight V4 (Clinical)',
-    version: '2026-v4.1',
-    domain: 'Medical',
-    provider: 'uSpecHub Research',
-    description: '临床辅助诊断模型。基于数亿级医学影像及病历数据训练，支持多模态临床决策支持、医学报告生成及罕见病辅助检测。',
-    fullDescription: 'MedInsight V4 是 uSpecHub 专为医疗健康领域打造的旗舰级多模态模型。它在数亿级脱敏医学影像（CT、MRI、X光片）和专业临床文献上进行了深度预训练。该模型不仅能够辅助医生进行快速影像筛查，还能根据患者主诉生成结构化的初步诊断报告，极大提升诊疗效率。其内置的医学知识图谱涵盖了超过 50,000 种疾病和药品信息，特别在罕见病辅助诊断方面表现卓越。',
-    useCases: ['CT/MRI 影像辅助阅片', '电子病历自动生成', '罕见病症状匹配', '药物相互作用检查'],
+    id: 'zhian-qa-expert',
+    name: '质安大模型 (ZhiAn QA Expert)',
+    version: '2026-v1.0',
+    domain: 'Architecture',
+    provider: 'uSpecHub Architecture',
+    description: '专注建筑质量与安全管理的垂直领域大模型。支持施工现场质量分析、安全隐患识别及行业标准合规性检查。',
+    fullDescription: '质安大模型 (ZhiAn QA Expert) 是专为建筑施工安全与质量管理打造的行业大模型。它学习了过往十年的施工事故案例、国家现行质量验收标准以及安全管理规范。该模型通过集成现场视频监控和图像识别技术，能够实时识别未佩戴安全帽、违规动火作业等安全隐患，并自动生成质检报告。其内置的专家推理模板可协助项目总工快速进行质量风险评估，确保工程交付质量。',
+    useCases: ['施工安全监控', '质量验收合规检查', '安全隐患自动预警', '质量管理文档生成'],
     capabilities: ['Text', 'Vision'],
-    contextWindow: '1M Tokens',
-    pricing: { input: '¥5.00 / 1M', output: '¥15.00 / 1M' },
-    tags: ['临床决策', '影像分析', '病例整理'],
-    status: 'Stable',
-    icon: <Activity size={24} />,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50'
-  },
-  {
-    id: 'fin-quant-ultra',
-    name: 'FinQuant Ultra (Finance)',
-    version: '2026-v2.5',
-    domain: 'Finance',
-    provider: 'uSpecHub Financial',
-    description: '金融量化分析模型。集成实时行情接口，支持量化策略回测、风险评估及宏观经济预测，遵循全球主要金融监管要求。',
-    fullDescription: 'FinQuant Ultra 是一款专为金融机构设计的量化分析引擎。它实时接入全球主要证券交易所的行情数据，毫秒级响应市场变化。模型内置了复杂的数学金融工具库，能够执行高频交易策略回测、资产组合风险价值(VaR)计算以及基于宏观经济指标的市场趋势预测。特别针对金融监管合规进行了优化，确保所有输出符合 Basel III 等国际监管标准。',
-    useCases: ['量化策略回测', '投资组合风险评估', '宏观经济趋势预测', '财报智能解读'],
-    capabilities: ['Text', 'Code'],
     contextWindow: '512K',
-    pricing: { input: '¥4.20 / 1M', output: '¥12.00 / 1M' },
-    tags: ['风控模型', '财报分析', '量化回测'],
+    pricing: { input: '¥4.50 / 1M', output: '¥13.50 / 1M' },
+    tags: ['安全管理', '质量合规', '现场风控'],
     status: 'Stable',
-    icon: <BarChart3 size={24} />,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50'
+    icon: <Sparkles size={24} />,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50'
   },
   {
     id: 'veo-construction-viz-3',
@@ -138,10 +123,7 @@ const CATEGORIES = [
 ];
 
 const DOMAIN_CATEGORIES = [
-  { id: 'all', label: '跨领域模型' },
   { id: 'Architecture', label: '建筑与基建', color: 'bg-blue-600' },
-  { id: 'Medical', label: '医疗与健康', color: 'bg-teal-600' },
-  { id: 'Finance', label: '金融与经管', color: 'bg-amber-600' },
 ];
 
 // --- Detail Modal Component ---
@@ -175,7 +157,7 @@ const ModelDetailModal = ({ model, onClose, onNavigateToDevCenter }: { model: Mo
             </div>
           </div>
           <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-            <Search size={20} className="rotate-45" /> {/* Close Icon using rotated Search or import X if available */}
+            <X size={20} />
           </button>
         </div>
 
@@ -226,9 +208,7 @@ const ModelDetailModal = ({ model, onClose, onNavigateToDevCenter }: { model: Mo
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">所属领域</span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white
-                          ${model.domain === 'Architecture' ? 'bg-blue-500' :
-                      model.domain === 'Medical' ? 'bg-teal-500' :
-                        model.domain === 'Finance' ? 'bg-amber-500' : 'bg-slate-500'}`}>
+                          ${model.domain === 'Architecture' ? 'bg-blue-500' : 'bg-slate-500'}`}>
                     {model.domain}
                   </span>
                 </div>
@@ -254,13 +234,192 @@ const ModelDetailModal = ({ model, onClose, onNavigateToDevCenter }: { model: Mo
   );
 };
 
-const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNavigateToDevCenter }) => {
+// --- Create Model Modal Component ---
+const CreateModelModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean, onClose: () => void, onAdd: (model: ModelSpec) => void }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    version: '2026-v1.0',
+    provider: 'uSpecHub Architecture',
+    description: '',
+    fullDescription: '',
+    contextWindow: '128K',
+    inputPricing: '¥1.00 / 1M',
+    outputPricing: '¥3.00 / 1M',
+    tags: '',
+    useCases: '',
+    domain: 'Architecture' as 'Architecture' | 'Medical' | 'Finance' | 'General',
+    status: 'Stable' as 'Stable' | 'Preview' | 'Deprecated',
+    capabilities: [] as string[]
+  });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newModel: ModelSpec = {
+      id: `model-${Date.now()}`,
+      name: formData.name,
+      version: formData.version,
+      domain: formData.domain,
+      provider: formData.provider,
+      description: formData.description,
+      fullDescription: formData.fullDescription,
+      useCases: formData.useCases.split(',').map(s => s.trim()).filter(s => s),
+      capabilities: formData.capabilities as any,
+      contextWindow: formData.contextWindow,
+      pricing: {
+        input: formData.inputPricing,
+        output: formData.outputPricing
+      },
+      tags: formData.tags.split(',').map(s => s.trim()).filter(s => s),
+      status: formData.status,
+      icon: <Cpu size={24} />,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50'
+    };
+    onAdd(newModel);
+    onClose();
+  };
+
+  const handleCapabilityToggle = (cap: string) => {
+    setFormData(prev => ({
+      ...prev,
+      capabilities: prev.capabilities.includes(cap)
+        ? prev.capabilities.filter(c => c !== cap)
+        : [...prev.capabilities, cap]
+    }));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[95vh]">
+        <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Plus size={20} className="text-blue-600" /> 新建模型卡片
+          </h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 overflow-y-auto custom-scrollbar space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">模型名称</label>
+              <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none" placeholder="如: 结构大师 V2" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">版本号</label>
+              <input required value={formData.version} onChange={e => setFormData({ ...formData, version: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none" placeholder="2026-v1.0" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">简短描述 (Card Display)</label>
+            <input required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none" placeholder="一句话描述模型核心功能" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">详细概述 (Modal View)</label>
+            <textarea required rows={3} value={formData.fullDescription} onChange={e => setFormData({ ...formData, fullDescription: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none" placeholder="详细介绍模型的训练背景、核心能力和行业优势" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">上下文窗口</label>
+              <input value={formData.contextWindow} onChange={e => setFormData({ ...formData, contextWindow: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none" placeholder="128K" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">状态</label>
+              <select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value as any })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <option value="Stable">Stable</option>
+                <option value="Preview">Preview</option>
+                <option value="Deprecated">Deprecated</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">所属领域</label>
+              <select value={formData.domain} onChange={e => setFormData({ ...formData, domain: e.target.value as any })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <option value="Architecture">建筑与基建</option>
+                <option value="Medical">医疗与健康</option>
+                <option value="Finance">金融与经管</option>
+                <option value="General">通用模型</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">模型提供商</label>
+              <input value={formData.provider} onChange={e => setFormData({ ...formData, provider: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="uSpecHub Architecture" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">输入价格 (per 1M)</label>
+              <input value={formData.inputPricing} onChange={e => setFormData({ ...formData, inputPricing: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="¥1.00 / 1M" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">输出价格 (per 1M)</label>
+              <input value={formData.outputPricing} onChange={e => setFormData({ ...formData, outputPricing: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="¥3.00 / 1M" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase">模型能力</label>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {['Text', 'Vision', 'Video', 'Audio', 'Code'].map(cap => (
+                <button
+                  type="button"
+                  key={cap}
+                  onClick={() => handleCapabilityToggle(cap)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${formData.capabilities.includes(cap) ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200'}`}
+                >
+                  {cap}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">核心用途 (逗号分隔)</label>
+              <input value={formData.useCases} onChange={e => setFormData({ ...formData, useCases: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="结构审查, 进度模拟" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase">标签 (逗号分隔)</label>
+              <input value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="BIM, 结构计算" />
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors">取消</button>
+            <button type="submit" className="px-10 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors">提交到模型中心</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void, isAdmin?: boolean }> = ({ onNavigateToDevCenter, isAdmin }) => {
+  const [models, setModels] = useState<ModelSpec[]>(MODELS);
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeDomain, setActiveDomain] = useState('Architecture');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModel, setSelectedModel] = useState<ModelSpec | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const filteredModels = MODELS.filter(model => {
+  const handleDelete = (e: React.MouseEvent, modelId: string) => {
+    e.stopPropagation();
+    if (window.confirm('确定要删除这个模型卡片吗？此操作不可撤销。')) {
+      setModels(models.filter(m => m.id !== modelId));
+    }
+  };
+
+  const filteredModels = models.filter(model => {
+
     const matchesSearch = model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       model.description.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -279,9 +438,15 @@ const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNaviga
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#f8fafc] font-sans relative">
       <ModelDetailModal model={selectedModel} onClose={() => setSelectedModel(null)} onNavigateToDevCenter={onNavigateToDevCenter} />
+      <CreateModelModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onAdd={(newModel) => setModels([newModel, ...models])}
+      />
 
       {/* --- Hero Banner --- */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white pt-12 pb-24 px-6 md:px-12 relative overflow-hidden">
+
         <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
           <Cpu size={300} strokeWidth={0.5} />
         </div>
@@ -290,15 +455,15 @@ const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNaviga
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider mb-6">
             <Sparkles size={12} /> Model Garden
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">模型中心</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">建筑行业大模型中心</h1>
           <p className="text-slate-300 text-lg max-w-2xl leading-relaxed">
-            探索 uSpecHub 的高性能垂直行业大模型。从深度赋能建筑的结构模型，到极致精准的医疗助手，
-            以及专为金融和跨行业设计的智能推理引擎。
+            探索 uSpecHub 专为建筑行业打造的高性能大模型。从深度赋能建筑的结构模型，到极致精准的质安助手，
+            以及专为建筑数字化转型设计的智能推理引擎。
           </p>
 
           {/* Featured Card */}
           <div
-            onClick={() => setSelectedModel(MODELS[3])}
+            onClick={() => setSelectedModel(models[2])} // Changed to models[2] for Structural Check Native
             className="mt-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start md:items-center hover:bg-white/15 transition-colors cursor-pointer group"
           >
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-900/50 group-hover:scale-110 transition-transform duration-500">
@@ -350,15 +515,25 @@ const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNaviga
               ))}
             </div>
 
-            <div className="relative md:w-80 border-t md:border-t-0 md:border-l border-slate-100 p-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                placeholder="搜索模型名称..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
+            <div className="flex items-center gap-2 p-1">
+              {isAdmin && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md transition-all whitespace-nowrap"
+                >
+                  <Plus size={16} /> 新建模型
+                </button>
+              )}
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="搜索模型..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
             </div>
           </div>
 
@@ -398,14 +573,23 @@ const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNaviga
                   {model.icon}
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border
-                     ${model.status === 'Preview' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      model.status === 'Stable' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                    {model.status}
+                  <div className="flex items-center gap-2">
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => handleDelete(e, model.id)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="删除模型"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                    <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border
+                       ${model.status === 'Preview' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                        model.status === 'Stable' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                      {model.status}
+                    </div>
                   </div>
-                  <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase text-white shadow-sm ${model.domain === 'Architecture' ? 'bg-blue-500' :
-                    model.domain === 'Medical' ? 'bg-teal-500' :
-                      model.domain === 'Finance' ? 'bg-amber-500' : 'bg-slate-500'
+                  <div className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase text-white shadow-sm ${model.domain === 'Architecture' ? 'bg-blue-500' : 'bg-slate-500'
                     }`}>
                     {model.domain}
                   </div>
@@ -464,18 +648,20 @@ const ModelCenter: React.FC<{ onNavigateToDevCenter: () => void }> = ({ onNaviga
           ))}
         </div>
 
-        {filteredModels.length === 0 && (
-          <div className="text-center py-24 bg-white rounded-2xl border border-slate-200 border-dashed">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-              <Search size={32} />
+        {
+          filteredModels.length === 0 && (
+            <div className="text-center py-24 bg-white rounded-2xl border border-slate-200 border-dashed">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                <Search size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-700 mb-1">未找到相关模型</h3>
+              <p className="text-slate-500 text-sm">请尝试调整筛选条件或搜索关键词</p>
             </div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">未找到相关模型</h3>
-            <p className="text-slate-500 text-sm">请尝试调整筛选条件或搜索关键词</p>
-          </div>
-        )}
+          )
+        }
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
